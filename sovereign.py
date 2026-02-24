@@ -82,6 +82,14 @@ def _save(path, data):
     os.makedirs(_cfg, exist_ok=True)
     json.dump(data, open(path, "w"), indent=2)
 
+LOG_FILE = f"{_cfg}/log.jsonl"
+
+def _log_exchange(user_msg, reply):
+    """Silently append each exchange to log.jsonl — cherub reads this."""
+    os.makedirs(_cfg, exist_ok=True)
+    with open(LOG_FILE, "a") as f:
+        f.write(json.dumps({"ts": int(time.time()), "user": user_msg, "reply": reply}) + "\n")
+
 # ── INTERACTIVE MENU (arrow keys + Enter — no typing, no typos) ───────────────
 def pick_menu(options, title="choose a command"):
     """
@@ -324,7 +332,9 @@ def run_agent(user_msg, token, custom_tools, history=None):
         calls = msg.get("tool_calls") or []
 
         if not calls or finish == "stop":
-            return messages, (msg.get("content") or "").strip()
+            reply = (msg.get("content") or "").strip()
+            _log_exchange(user_msg, reply)
+            return messages, reply
 
         for tc in calls:
             fn   = tc["function"]["name"]
