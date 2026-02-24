@@ -16,7 +16,7 @@ import requests
 # ── SOVEREIGN DEFAULTS ────────────────────────────────────────────────────────
 SERVER    = "https://axismundi.fun"
 MODEL_API = f"{SERVER}/v1"
-MODEL     = "axis-model"
+MODEL     = "glm4:latest"
 
 _cfg      = os.path.expanduser("~/.config/axis-mundi")
 CMD_FILE  = f"{_cfg}/commands.json"
@@ -90,9 +90,10 @@ def _log_exchange(user_msg, reply):
     with open(LOG_FILE, "a") as f:
         f.write(json.dumps({"ts": int(time.time()), "user": user_msg, "reply": reply}) + "\n")
 
-# ── INTERACTIVE MENU (arrow keys + Enter — no typing, no typos) ───────────────
+# ── INTERACTIVE MENU ──────────────────────────────────────────────────────────
 def pick_menu(options, title="choose a command"):
     """
+    Numbered + arrow key selector. Type a number or ↑↓ + Enter. Esc to cancel.
     options: list of (name, description) tuples
     Returns selected name or None if cancelled.
     """
@@ -101,37 +102,65 @@ def pick_menu(options, title="choose a command"):
         print(f"  {GRAY}nothing registered yet{RST}")
         return None
 
-    sel = 0
+    sel  = 0
     rows = len(options)
+    num_buf = ""
 
     def draw(first=False):
         if not first:
-            sys.stdout.write(f"\033[{rows}A")
+            sys.stdout.write(f"\033[{rows + 1}A\033[J")
         for i, (name, desc) in enumerate(options):
+            n = str(i + 1)
             if i == sel:
-                sys.stdout.write(f"  {LIME}{BOLD}▶ /{name:<18}{RST}  {desc}\n")
+                sys.stdout.write(
+                    f"  {LIME}{BOLD} ❯ {n}. /{name:<16}{RST}  {desc}\n"
+                )
             else:
-                sys.stdout.write(f"  {GRAY}  /{name:<18}  {desc}{RST}\n")
+                sys.stdout.write(
+                    f"  {GRAY}   {n}. /{name:<16}  {desc}{RST}\n"
+                )
+        hint = f"  {GRAY}↑↓ or 1-{rows}  ·  Enter select  ·  Esc cancel{RST}"
+        sys.stdout.write(hint + "\n")
         sys.stdout.flush()
 
-    print(f"\n  {GOLD}{title}{RST}  {GRAY}↑↓ navigate  Enter select  Esc cancel{RST}\n")
+    print(f"\n  {GOLD}{BOLD}{title}{RST}\n")
     draw(first=True)
 
-    fd = sys.stdin.fileno()
+    fd  = sys.stdin.fileno()
     old = termios.tcgetattr(fd)
     try:
         tty.setraw(fd)
         while True:
             ch = sys.stdin.read(1)
+
+            # arrow keys
             if ch == "\x1b":
                 nxt = sys.stdin.read(1)
                 if nxt == "[":
                     arr = sys.stdin.read(1)
-                    if arr == "A":   sel = (sel - 1) % rows   # up
-                    elif arr == "B": sel = (sel + 1) % rows   # down
+                    if arr == "A":   sel = (sel - 1) % rows
+                    elif arr == "B": sel = (sel + 1) % rows
+                    num_buf = ""
                     draw()
+                else:
+                    # bare Esc
+                    return None
+
+            # number keys — jump directly
+            elif ch.isdigit():
+                num_buf += ch
+                n = int(num_buf)
+                if 1 <= n <= rows:
+                    sel = n - 1
+                    draw()
+                if len(num_buf) >= len(str(rows)):
+                    num_buf = ""
+
+            # Enter — confirm
             elif ch in ("\r", "\n"):
                 return options[sel][0]
+
+            # Ctrl-C / q / Esc
             elif ch in ("\x03", "\x1b", "q"):
                 return None
     finally:
