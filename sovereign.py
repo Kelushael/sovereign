@@ -15,8 +15,8 @@ import requests
 
 # ── SOVEREIGN DEFAULTS ────────────────────────────────────────────────────────
 SERVER    = "https://axismundi.fun"
-MODEL_API = f"{SERVER}/v1"
-MODEL     = "axis-model"
+MODEL_API = os.environ.get("MODEL_API", f"{SERVER}/v1")
+MODEL     = "dolphin-mistral:latest"
 
 _cfg      = os.path.expanduser("~/.config/axis-mundi")
 CMD_FILE  = f"{_cfg}/commands.json"
@@ -321,21 +321,48 @@ def call_tool(token, name, args, custom_tools):
     except Exception as e:
         return {"error": str(e)}
 
-# ── CALL MODEL (VPS) ──────────────────────────────────────────────────────────
+# ── CALL MODEL (VPS) — streaming ──────────────────────────────────────────────
 def call_model(messages, tools, token):
     headers = {"Content-Type": "application/json"}
     if token: headers["Authorization"] = f"Bearer {token}"
+
+    # use streaming only when no tools (tool calls need full JSON back)
+    use_stream = not tools
+
     try:
         r = requests.post(f"{MODEL_API}/chat/completions",
                           json={"model": MODEL, "messages": messages,
-                                "tools": tools, "stream": False},
-                          headers=headers, timeout=300)
+                                "tools": tools, "stream": use_stream},
+                          headers=headers, timeout=300,
+                          stream=use_stream)
     except requests.exceptions.ConnectionError:
         return None, f"cannot reach {MODEL_API}"
     if not r.ok:
         return None, f"model API {r.status_code}: {r.text[:300]}"
-    c = r.json()["choices"][0]
-    return c["message"], c.get("finish_reason")
+
+    if use_stream:
+        # stream tokens straight to terminal
+        full = ""
+        sys.stdout.write(f"\n{CYAN}")
+        for line in r.iter_lines():
+            if not line: continue
+            line = line.decode() if isinstance(line, bytes) else line
+            if line.startswith("data: "):
+                chunk = line[6:]
+                if chunk.strip() == "[DONE]": break
+                try:
+                    delta = json.loads(chunk)["choices"][0]["delta"]
+                    tok = delta.get("content") or ""
+                    if tok:
+                        sys.stdout.write(tok)
+                        sys.stdout.flush()
+                        full += tok
+                except: pass
+        sys.stdout.write(f"{RST}\n")
+        return {"role": "assistant", "content": full}, "stop"
+    else:
+        c = r.json()["choices"][0]
+        return c["message"], c.get("finish_reason")
 
 # ── /run model swap ───────────────────────────────────────────────────────────
 def run_model_swap(token, model_name):
@@ -357,7 +384,11 @@ def run_agent(user_msg, token, custom_tools, history=None):
 
     for rnd in range(12):
         label = f"{MODEL} ..." if rnd == 0 else f"{MODEL} round {rnd+1} ..."
-        with Spin(label):
+        if tools:
+            with Spin(label):
+                msg, finish = call_model(messages, tools, token)
+        else:
+            print(f"  {GRAY}{label}{RST}", end="\r", flush=True)
             msg, finish = call_model(messages, tools, token)
 
         if msg is None:
