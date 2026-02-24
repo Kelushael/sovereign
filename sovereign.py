@@ -35,12 +35,16 @@ RST  = "\033[0m"
 BOLD = "\033[1m"
 
 BANNER = (
-    f"\n{PINK}{BOLD}"
-    f"  ╔══════════════════════════════════════════╗\n"
-    f"  ║  SOVEREIGN  ·  AXIS MUNDI               ║\n"
-    f"  ║  zero local compute  ·  your cloud      ║\n"
-    f"  ╚══════════════════════════════════════════╝"
-    f"{RST}"
+    f"\n"
+    f"{LIME}         ▄████▄                                        {RST}\n"
+    f"{LIME}       ▄█{RST}{CYAN}◉{RST}{LIME}    █▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄█   {RST}\n"
+    f"{LIME}      █▌           ████                              ▐█  {RST}\n"
+    f"{LIME}      ████████████████████████████████████████████████   {RST}\n"
+    f"{LIME}          ██    ██    ██    ██    ██    ██    ██          {RST}\n"
+    f"{GOLD}                                          ╰──{RST}{GRAY}[□]{RST}{GOLD}~{RST}\n"
+    f"\n"
+    f"  {PINK}{BOLD}SOVEREIGN{RST}  {GRAY}·{RST}  {CYAN}AXIS MUNDI{RST}  "
+    f"{GRAY}·  zero local compute  ·  your iron  ·  your rules{RST}\n"
 )
 
 # ── SPINNER ───────────────────────────────────────────────────────────────────

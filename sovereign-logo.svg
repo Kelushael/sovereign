@@ -1,0 +1,167 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 290" style="background:#0d1117">
+  <defs>
+    <!-- freedom glow right side -->
+    <radialGradient id="glow" cx="90%" cy="55%" r="50%">
+      <stop offset="0%" stop-color="#f5a623" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#f5a623" stop-opacity="0"/>
+    </radialGradient>
+    <!-- captivity shadow left side -->
+    <radialGradient id="shadow" cx="12%" cy="50%" r="45%">
+      <stop offset="0%" stop-color="#000" stop-opacity="0.45"/>
+      <stop offset="100%" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+    <!-- ground line -->
+    <linearGradient id="ground" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#1a1a1a"/>
+      <stop offset="50%" stop-color="#222"/>
+      <stop offset="100%" stop-color="#3a2800"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="520" height="290" fill="#0d1117"/>
+  <rect width="520" height="290" fill="url(#glow)"/>
+  <rect width="520" height="290" fill="url(#shadow)"/>
+
+  <!-- Ground -->
+  <rect x="0" y="248" width="520" height="42" fill="url(#ground)"/>
+
+  <!-- ═══ BROKEN CAGE BARS (left / behind elephant — path of destruction) ═══ -->
+  <g fill="#2a2a3a" stroke="#39395a" stroke-width="1.5">
+    <!-- bars toppled/scattered at angles -->
+    <rect x="14" y="65" width="9" height="140" rx="3" transform="rotate(-22 18 135)"/>
+    <rect x="36" y="50" width="9" height="150" rx="3" transform="rotate(12 40 125)"/>
+    <rect x="58" y="72" width="9" height="130" rx="3" transform="rotate(-8 62 137)"/>
+    <rect x="80" y="58" width="9" height="145" rx="3" transform="rotate(18 84 130)"/>
+    <rect x="102" y="80" width="9" height="120" rx="3" transform="rotate(-14 106 140)"/>
+    <rect x="120" y="68" width="9" height="135" rx="3" transform="rotate(25 124 135)"/>
+    <!-- horizontal cross-bars broken/fallen -->
+    <rect x="18" y="148" width="75" height="7" rx="3" transform="rotate(-6 55 151)"/>
+    <rect x="30" y="190" width="90" height="7" rx="3" transform="rotate(4 75 193)"/>
+    <rect x="10" y="105" width="60" height="7" rx="3" transform="rotate(-15 40 108)"/>
+  </g>
+  <!-- broken chain links on ground -->
+  <g fill="none" stroke="#3a3a50" stroke-width="2.5">
+    <ellipse cx="40" cy="252" rx="10" ry="5" transform="rotate(-20 40 252)"/>
+    <ellipse cx="60" cy="255" rx="10" ry="5" transform="rotate(10 60 255)"/>
+    <ellipse cx="80" cy="251" rx="10" ry="5" transform="rotate(-5 80 251)"/>
+    <ellipse cx="100" cy="254" rx="10" ry="5" transform="rotate(15 100 254)"/>
+  </g>
+
+  <!-- ═══ CELEBRATING FIGURES (walking with elephant, arms up) ═══ -->
+  <!-- figure 1 -->
+  <g stroke="#57ff64" stroke-width="2.5" stroke-linecap="round" fill="none">
+    <circle cx="158" cy="210" r="7" fill="#57ff64"/>
+    <line x1="158" y1="217" x2="158" y2="238"/>
+    <line x1="158" y1="224" x2="148" y2="214"/>
+    <line x1="158" y1="224" x2="168" y2="213"/>
+    <line x1="158" y1="238" x2="151" y2="250"/>
+    <line x1="158" y1="238" x2="165" y2="250"/>
+  </g>
+  <!-- figure 2, smaller (child?) -->
+  <g stroke="#c8ff90" stroke-width="2" stroke-linecap="round" fill="none">
+    <circle cx="180" cy="218" r="5" fill="#c8ff90"/>
+    <line x1="180" y1="223" x2="180" y2="239"/>
+    <line x1="180" y1="229" x2="173" y2="221"/>
+    <line x1="180" y1="229" x2="187" y2="220"/>
+    <line x1="180" y1="239" x2="174" y2="249"/>
+    <line x1="180" y1="239" x2="186" y2="249"/>
+  </g>
+  <!-- figure 3, fist-pump -->
+  <g stroke="#39ff80" stroke-width="2.5" stroke-linecap="round" fill="none">
+    <circle cx="138" cy="213" r="6" fill="#39ff80"/>
+    <line x1="138" y1="219" x2="138" y2="238"/>
+    <line x1="138" y1="225" x2="130" y2="212"/>
+    <line x1="138" y1="225" x2="143" y2="215"/>
+    <line x1="138" y1="238" x2="132" y2="250"/>
+    <line x1="138" y1="238" x2="144" y2="250"/>
+  </g>
+
+  <!-- ═══ ELEPHANT ═══ -->
+  <!-- Tail -->
+  <path d="M 205 170 Q 190 182 185 200 Q 183 212 190 216"
+        fill="none" stroke="#39c84a" stroke-width="7" stroke-linecap="round"/>
+
+  <!-- Body -->
+  <ellipse cx="282" cy="158" rx="82" ry="58" fill="#57ff64"/>
+
+  <!-- Ear (large, left side / behind head) -->
+  <ellipse cx="325" cy="120" rx="26" ry="36" fill="#39a846"/>
+
+  <!-- Head -->
+  <circle cx="358" cy="112" r="44" fill="#57ff64"/>
+
+  <!-- Face highlight (subtle) -->
+  <ellipse cx="365" cy="108" rx="20" ry="16" fill="#6aff78" opacity="0.3"/>
+
+  <!-- Eye -->
+  <circle cx="372" cy="102" r="7" fill="#0d1117"/>
+  <circle cx="374" cy="100" r="2.5" fill="white"/>
+
+  <!-- Tusk -->
+  <path d="M 390 125 Q 415 128 418 116 Q 420 108 410 105"
+        fill="none" stroke="#f5efcf" stroke-width="6" stroke-linecap="round"/>
+
+  <!-- Trunk — curved down then UP at tip (joyous) -->
+  <path d="M 396 132 Q 428 150 430 178 Q 432 200 420 210 Q 408 220 400 210 Q 395 202 402 196"
+        fill="none" stroke="#57ff64" stroke-width="16" stroke-linecap="round"/>
+  <!-- trunk tip curl -->
+  <circle cx="404" cy="194" r="7" fill="#57ff64"/>
+
+  <!-- Legs — mid-stride, elephant in motion -->
+  <!-- back left (yarn attached here) -->
+  <rect x="218" y="208" width="24" height="52" rx="10" fill="#39a846"/>
+  <!-- back right -->
+  <rect x="248" y="210" width="24" height="50" rx="10" fill="#4ac855"/>
+  <!-- front left -->
+  <rect x="296" y="208" width="24" height="52" rx="10" fill="#4ac855"/>
+  <!-- front right (slightly lifted — mid-stride) -->
+  <rect x="328" y="212" width="24" height="48" rx="10" fill="#57ff64" transform="rotate(-4 340 212)"/>
+
+  <!-- Foot dust clouds (motion) -->
+  <ellipse cx="260" cy="262" rx="18" ry="6" fill="#1a2a1a" opacity="0.5"/>
+  <ellipse cx="308" cy="261" rx="18" ry="6" fill="#1a2a1a" opacity="0.5"/>
+
+  <!-- ═══ YARN + TINY CHAIR ═══ -->
+  <!-- yarn — loose, slightly saggy dashed line -->
+  <path d="M 222 258 Q 200 268 175 264 Q 158 261 148 265"
+        fill="none" stroke="#c8a86b" stroke-width="2.5"
+        stroke-dasharray="5,4" stroke-linecap="round" opacity="0.9"/>
+
+  <!-- TINY CHAIR — wooden, recognizable, lovably small -->
+  <g transform="translate(135,260)">
+    <!-- seat -->
+    <rect x="-14" y="-6" width="28" height="5" rx="2" fill="#8B4513" stroke="#5c2d0a" stroke-width="1"/>
+    <!-- back post left -->
+    <rect x="-14" y="-22" width="5" height="18" rx="2" fill="#7a3b10" stroke="#5c2d0a" stroke-width="1"/>
+    <!-- back post right -->
+    <rect x="9" y="-22" width="5" height="18" rx="2" fill="#7a3b10" stroke="#5c2d0a" stroke-width="1"/>
+    <!-- back rail -->
+    <rect x="-14" y="-20" width="28" height="4" rx="2" fill="#8B4513" stroke="#5c2d0a" stroke-width="1"/>
+    <!-- top rail -->
+    <rect x="-14" y="-26" width="28" height="4" rx="2" fill="#a0531a" stroke="#5c2d0a" stroke-width="1"/>
+    <!-- front legs -->
+    <rect x="-12" y="-1" width="4" height="16" rx="2" fill="#7a3b10" stroke="#5c2d0a" stroke-width="1"/>
+    <rect x="8" y="-1" width="4" height="16" rx="2" fill="#7a3b10" stroke="#5c2d0a" stroke-width="1"/>
+  </g>
+
+  <!-- ═══ FREEDOM RAYS (right side) ═══ -->
+  <g stroke="#f5a623" stroke-width="1.5" opacity="0.2" stroke-linecap="round">
+    <line x1="510" y1="40"  x2="440" y2="200"/>
+    <line x1="518" y1="80"  x2="455" y2="215"/>
+    <line x1="515" y1="130" x2="462" y2="228"/>
+    <line x1="508" y1="180" x2="465" y2="240"/>
+  </g>
+  <!-- horizon glow -->
+  <ellipse cx="505" cy="248" rx="60" ry="25" fill="#f5a623" opacity="0.12"/>
+
+  <!-- ═══ WORDMARK ═══ -->
+  <text x="260" y="284" fill="#57ff64" font-size="13"
+        font-family="'Courier New', monospace" font-weight="bold"
+        text-anchor="middle" letter-spacing="10" opacity="0.9">SOVEREIGN</text>
+  <text x="260" y="284" fill="none" font-size="13"
+        font-family="'Courier New', monospace" font-weight="bold"
+        text-anchor="middle" letter-spacing="10"
+        stroke="#57ff64" stroke-width="0.3" opacity="0.4">SOVEREIGN</text>
+
+</svg>
