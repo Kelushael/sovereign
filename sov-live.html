@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>sovereign · live</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; background: #0a0a0f; overflow: hidden; }
+
+  #term {
+    font-family: 'Share Tech Mono', 'Courier New', monospace;
+    font-size: 13px;
+    line-height: 1.5;
+    color: #c8c8d4;
+    padding: 18px 22px;
+    height: 100vh;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+
+  #bar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 28px;
+    background: rgba(10,10,15,0.92);
+    border-bottom: 1px solid #1e1e2e;
+    display: flex;
+    align-items: center;
+    padding: 0 14px;
+    gap: 10px;
+    z-index: 10;
+    backdrop-filter: blur(6px);
+  }
+  .dot { width: 10px; height: 10px; border-radius: 50%; }
+  .dot.pink { background: #ff69b4; }
+  .dot.lime { background: #39ff64; animation: pulse 2s infinite; }
+  .dot.off  { background: #333; }
+  #status { color: #555; font-family: 'Share Tech Mono', monospace; font-size: 11px; }
+  #term { padding-top: 38px; }
+
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+</style>
+</head>
+<body>
+
+<div id="bar">
+  <div class="dot pink"></div>
+  <div id="livedot" class="dot off"></div>
+  <span id="status">connecting...</span>
+</div>
+
+<div id="term"></div>
+
+<script>
+const term   = document.getElementById('term');
+const status = document.getElementById('status');
+const livdot = document.getElementById('livedot');
+const WS     = 'ws://localhost:8765';
+let   ws, reconnectTimer;
+
+// ANSI → HTML (handles colors sovereign uses)
+const ANSI = (() => {
+  const map = {
+    '0':  'color:inherit;font-weight:normal',
+    '1':  'font-weight:bold',
+    '2':  'opacity:0.5',
+    // sovereign palette (38;2;R;G;B)
+  };
+  function rgb(r,g,b){ return `color:rgb(${r},${g},${b})`; }
+  return function(raw) {
+    return raw
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/\x1b\[([0-9;]*)m/g, (_, codes) => {
+        if (!codes || codes === '0') return '</span><span>';
+        const parts = codes.split(';');
+        if (parts[0]==='38' && parts[1]==='2' && parts.length>=5) {
+          return `</span><span style="${rgb(parts[2],parts[3],parts[4])}">`;
+        }
+        if (parts[0]==='1') return `</span><span style="font-weight:bold">`;
+        if (parts[0]==='2') return `</span><span style="opacity:0.45">`;
+        return '</span><span>';
+      })
+      .replace(/\x1b\[[0-9;]*[A-HJKSTfn]/g, '') // erase / cursor moves — skip
+      .replace(/\r\n/g,'\n').replace(/\r/g,'\n');
+  };
+})();
+
+function append(text) {
+  const html = '<span>' + ANSI(text) + '</span>';
+  term.insertAdjacentHTML('beforeend', html);
+  term.scrollTop = term.scrollHeight;
+}
+
+function connect() {
+  ws = new WebSocket(WS);
+
+  ws.onopen = () => {
+    status.textContent = 'live · sovereign terminal';
+    status.style.color = '#39ff64';
+    livdot.className   = 'dot lime';
+    clearTimeout(reconnectTimer);
+  };
+
+  ws.onmessage = e => {
+    try {
+      const msg = JSON.parse(e.data);
+      if (msg.type === 'output') append(msg.data);
+    } catch {
+      append(e.data);
+    }
+  };
+
+  ws.onclose = ws.onerror = () => {
+    status.textContent = 'disconnected — retrying...';
+    status.style.color = '#555';
+    livdot.className   = 'dot off';
+    reconnectTimer = setTimeout(connect, 2000);
+  };
+}
+
+connect();
+</script>
+</body>
+</html>
