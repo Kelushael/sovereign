@@ -16,7 +16,7 @@ import requests
 # ── SOVEREIGN DEFAULTS ────────────────────────────────────────────────────────
 SERVER    = "https://axismundi.fun"
 MODEL_API = f"{SERVER}/v1"
-MODEL     = "glm4:latest"
+MODEL     = "axis-model"
 
 _cfg      = os.path.expanduser("~/.config/axis-mundi")
 CMD_FILE  = f"{_cfg}/commands.json"
