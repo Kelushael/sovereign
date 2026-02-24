@@ -90,37 +90,44 @@ def _log_exchange(user_msg, reply):
     with open(LOG_FILE, "a") as f:
         f.write(json.dumps({"ts": int(time.time()), "user": user_msg, "reply": reply}) + "\n")
 
-# ── INTERACTIVE MENU ──────────────────────────────────────────────────────────
-def pick_menu(options, title="choose a command"):
+# ── INTERACTIVE MENU — fzf style ──────────────────────────────────────────────
+def pick_menu(options, title="sovereign commands"):
     """
-    Numbered + arrow key selector. Type a number or ↑↓ + Enter. Esc to cancel.
+    Type to filter. ↑↓ to move. Enter to select. Esc to cancel.
     options: list of (name, description) tuples
-    Returns selected name or None if cancelled.
+    Returns selected name or None.
     """
     import tty, termios
     if not options:
         print(f"  {GRAY}nothing registered yet{RST}")
         return None
 
-    sel  = 0
-    rows = len(options)
-    num_buf = ""
+    query = ""
+    sel   = 0
+
+    def filtered():
+        if not query:
+            return options
+        q = query.lower()
+        return [(n, d) for n, d in options if q in n.lower() or q in d.lower()]
 
     def draw(first=False):
+        vis = filtered()
+        lines = len(vis) + 2          # results + prompt line + hint
         if not first:
-            sys.stdout.write(f"\033[{rows + 1}A\033[J")
-        for i, (name, desc) in enumerate(options):
-            n = str(i + 1)
-            if i == sel:
-                sys.stdout.write(
-                    f"  {LIME}{BOLD} ❯ {n}. /{name:<16}{RST}  {desc}\n"
-                )
-            else:
-                sys.stdout.write(
-                    f"  {GRAY}   {n}. /{name:<16}  {desc}{RST}\n"
-                )
-        hint = f"  {GRAY}↑↓ or 1-{rows}  ·  Enter select  ·  Esc cancel{RST}"
-        sys.stdout.write(hint + "\n")
+            sys.stdout.write(f"\033[{lines}A\033[J")
+        # prompt
+        sys.stdout.write(f"  {PINK}{BOLD}  /{query}▌{RST}\n")
+        # results
+        if vis:
+            for i, (name, desc) in enumerate(vis):
+                if i == sel:
+                    sys.stdout.write(f"  {LIME}{BOLD} ❯ /{name:<18}{RST}  {GRAY}{desc}{RST}\n")
+                else:
+                    sys.stdout.write(f"    {GRAY}  /{name:<18}  {desc}{RST}\n")
+        else:
+            sys.stdout.write(f"  {GRAY}  no match{RST}\n")
+        sys.stdout.write(f"  {GRAY}type to filter  ↑↓  Enter  Esc{RST}\n")
         sys.stdout.flush()
 
     print(f"\n  {GOLD}{BOLD}{title}{RST}\n")
@@ -132,37 +139,37 @@ def pick_menu(options, title="choose a command"):
         tty.setraw(fd)
         while True:
             ch = sys.stdin.read(1)
+            vis = filtered()
 
-            # arrow keys
             if ch == "\x1b":
                 nxt = sys.stdin.read(1)
                 if nxt == "[":
                     arr = sys.stdin.read(1)
-                    if arr == "A":   sel = (sel - 1) % rows
-                    elif arr == "B": sel = (sel + 1) % rows
-                    num_buf = ""
+                    if arr == "A": sel = max(0, sel - 1)
+                    elif arr == "B": sel = min(len(vis) - 1, sel + 1) if vis else 0
                     draw()
                 else:
-                    # bare Esc
-                    return None
+                    return None           # bare Esc
 
-            # number keys — jump directly
-            elif ch.isdigit():
-                num_buf += ch
-                n = int(num_buf)
-                if 1 <= n <= rows:
-                    sel = n - 1
-                    draw()
-                if len(num_buf) >= len(str(rows)):
-                    num_buf = ""
-
-            # Enter — confirm
             elif ch in ("\r", "\n"):
-                return options[sel][0]
-
-            # Ctrl-C / q / Esc
-            elif ch in ("\x03", "\x1b", "q"):
+                vis = filtered()
+                if vis and 0 <= sel < len(vis):
+                    return vis[sel][0]
                 return None
+
+            elif ch in ("\x03",):        # Ctrl-C
+                return None
+
+            elif ch in ("\x7f", "\x08"): # backspace
+                query = query[:-1]
+                sel   = 0
+                draw()
+
+            elif ch.isprintable():
+                query += ch
+                sel    = 0
+                draw()
+
     finally:
         termios.tcsetattr(fd, termios.TCSADRAIN, old)
         print()
