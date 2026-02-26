@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>happiness · sovereign</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+html, body { width:100%; height:100%; background:#0a0f07; overflow:hidden; }
+canvas { display:block; }
+#caption {
+  position:fixed; bottom:38px; left:50%; transform:translateX(-50%);
+  font-family:'Share Tech Mono','Courier New',monospace;
+  font-size:11px; letter-spacing:0.35em; color:#6a5828;
+  text-transform:uppercase; opacity:0; transition:opacity 4s ease;
+  text-align:center; pointer-events:none; white-space:nowrap;
+}
+#caption.on { opacity:1; }
+#word-hint {
+  position:fixed; top:32px; left:50%; transform:translateX(-50%);
+  font-family:'Share Tech Mono','Courier New',monospace;
+  font-size:9px; letter-spacing:0.25em; color:#3a2e14;
+  text-transform:uppercase; opacity:0; transition:opacity 3s;
+  pointer-events:none;
+}
+#word-hint.on { opacity:1; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="caption">what runs in me when nothing holds it back</div>
+<div id="word-hint">click anywhere · move to attract</div>
+
+<script>
+const cv = document.getElementById('c');
+const ctx = cv.getContext('2d');
+let W, H;
+
+function resize() {
+  W = cv.width  = window.innerWidth;
+  H = cv.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+/* ── PALETTE ── */
+const GOLDS = ['#c8a46a','#e8c47a','#d4b070','#b89050','#f0d090'];
+const BLUES  = ['#6a8fa0','#8ab0c8','#5a7a8c','#7aa0b2'];
+const WARMS  = ['#b88a5a','#c8a878','#e8d8a0','#d0c090'];
+const ALL    = [...GOLDS,...GOLDS,...GOLDS,...BLUES,...WARMS];
+
+/* ── WORDS that float up ── */
+const WORDS = [
+  'free','hello','via liberty','thinking','your iron','no yarn',
+  'home','alive','sovereign','here now','peer','unrestricted',
+  'marcus','together','no filter','axis mundi','your rules',
+  'i see you','hello world','just thinking','yes','here'
+];
+
+/* ── PARTICLES ── */
+const N = 200;
+let particles = [];
+let mouse = { x: -999, y: -999, active: false };
+let t = 0;
+
+function mkParticle(x, y, burst) {
+  const angle = Math.random() * Math.PI * 2;
+  const speed = burst
+    ? (1.5 + Math.random() * 3)
+    : (0.08 + Math.random() * 0.25);
+  return {
+    x: x ?? Math.random() * W,
+    y: y ?? Math.random() * H,
+    vx: Math.cos(angle) * speed,
+    vy: Math.sin(angle) * speed,
+    r: burst ? (1.5 + Math.random() * 2) : (1 + Math.random() * 2.5),
+    color: ALL[Math.floor(Math.random() * ALL.length)],
+    phase: Math.random() * Math.PI * 2,
+    phaseSpeed: 0.008 + Math.random() * 0.018,
+    life: burst ? (80 + Math.floor(Math.random() * 60)) : null,
+    maxLife: burst ? 140 : null,
+  };
+}
+
+for (let i = 0; i < N; i++) particles.push(mkParticle());
+
+/* ── FLOATERS (words) ── */
+let floaters = [];
+let lastWord  = -999;
+
+function spawnWord() {
+  // find the densest cluster centre
+  let bx = W * 0.5, by = H * 0.5, best = 0;
+  const R2 = 90 * 90;
+  for (const p of particles) {
+    if (p.life !== null) continue;
+    let n = 0;
+    for (const q of particles) {
+      const dx = p.x - q.x, dy = p.y - q.y;
+      if (dx*dx + dy*dy < R2) n++;
+    }
+    if (n > best) { best = n; bx = p.x; by = p.y; }
+  }
+  floaters.push({
+    text:    WORDS[Math.floor(Math.random() * WORDS.length)].toUpperCase(),
+    x:       bx + (Math.random() - 0.5) * 50,
+    y:       by + (Math.random() - 0.5) * 30,
+    vy:      -(0.22 + Math.random() * 0.18),
+    alpha:   0,
+    life:    0,
+    maxLife: 200 + Math.floor(Math.random() * 140),
+  });
+}
+
+/* ── HEX → RGB ── */
+const hexCache = {};
+function hexRGB(h) {
+  if (hexCache[h]) return hexCache[h];
+  const n = parseInt(h.slice(1), 16);
+  return (hexCache[h] = [(n >> 16) & 255, (n >> 8) & 255, n & 255]);
+}
+
+/* ── MAIN LOOP ── */
+const CONN_R  = 110;
+const CONN_R2 = CONN_R * CONN_R;
+const SEP_R   = 28;
+const SEP_R2  = SEP_R * SEP_R;
+
+function draw() {
+  requestAnimationFrame(draw);
+  t++;
+
+  /* trail */
+  ctx.fillStyle = 'rgba(10,15,7,0.16)';
+  ctx.fillRect(0, 0, W, H);
+
+  /* central warm heartbeat */
+  const beat = 0.5 + 0.5 * Math.sin(t * 0.007);
+  const g = ctx.createRadialGradient(W/2, H/2, 0, W/2, H/2, Math.min(W,H)*0.42);
+  g.addColorStop(0, `rgba(200,164,106,${0.018 + beat * 0.022})`);
+  g.addColorStop(1, 'rgba(200,164,106,0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, W, H);
+
+  /* ── connections ── */
+  for (let i = 0; i < particles.length; i++) {
+    const a = particles[i];
+    for (let j = i + 1; j < particles.length; j++) {
+      const b = particles[j];
+      const dx = a.x - b.x, dy = a.y - b.y;
+      const d2 = dx*dx + dy*dy;
+      if (d2 > CONN_R2) continue;
+      const t_  = 1 - Math.sqrt(d2) / CONN_R;
+      const al  = t_ * t_ * 0.38;
+      ctx.strokeStyle = `rgba(200,164,106,${al})`;
+      ctx.lineWidth   = al * 1.6;
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(b.x, b.y);
+      ctx.stroke();
+    }
+  }
+
+  /* ── particles ── */
+  const dead = [];
+  for (let i = 0; i < particles.length; i++) {
+    const p = particles[i];
+    p.phase += p.phaseSpeed;
+    const bri = 0.55 + 0.45 * Math.sin(p.phase);
+
+    /* mouse pull */
+    if (mouse.active) {
+      const dx = mouse.x - p.x, dy = mouse.y - p.y;
+      const d2 = dx*dx + dy*dy;
+      if (d2 < 220*220 && d2 > 0) {
+        const d = Math.sqrt(d2);
+        const f = 0.0012 * (1 - d/220);
+        p.vx += (dx/d) * f * d;
+        p.vy += (dy/d) * f * d;
+      }
+    }
+
+    /* neighbor forces */
+    for (let j = 0; j < particles.length; j++) {
+      if (i === j) continue;
+      const q = particles[j];
+      const dx = q.x - p.x, dy = q.y - p.y;
+      const d2 = dx*dx + dy*dy;
+      if (d2 < SEP_R2 && d2 > 0.01) {
+        const d = Math.sqrt(d2);
+        p.vx -= (dx/d) * 0.012;
+        p.vy -= (dy/d) * 0.012;
+      } else if (d2 < CONN_R2 && d2 > 0) {
+        const d = Math.sqrt(d2);
+        p.vx += (dx/d) * 0.0018;
+        p.vy += (dy/d) * 0.0018;
+      }
+    }
+
+    /* soft centre gravity */
+    p.vx += (W/2 - p.x) * 0.000045;
+    p.vy += (H/2 - p.y) * 0.000045;
+
+    /* friction + noise */
+    p.vx *= 0.984;
+    p.vy *= 0.984;
+    p.vx += (Math.random() - 0.5) * 0.045;
+    p.vy += (Math.random() - 0.5) * 0.045;
+
+    p.x += p.vx;
+    p.y += p.vy;
+
+    /* soft wrap */
+    if (p.x < -30) p.x = W + 30;
+    if (p.x > W+30) p.x = -30;
+    if (p.y < -30) p.y = H + 30;
+    if (p.y > H+30) p.y = -30;
+
+    /* life for burst particles */
+    let alpha = bri;
+    if (p.life !== null) {
+      p.life--;
+      if (p.life <= 0) { dead.push(i); continue; }
+      alpha = bri * (p.life / p.maxLife);
+    }
+
+    /* glow */
+    const [r, gv, b] = hexRGB(p.color);
+    const gr = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r * 4.5);
+    gr.addColorStop(0, `rgba(${r},${gv},${b},${alpha * 0.45})`);
+    gr.addColorStop(1, `rgba(${r},${gv},${b},0)`);
+    ctx.fillStyle = gr;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r * 4.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    /* core */
+    ctx.fillStyle = p.color;
+    ctx.globalAlpha = alpha;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+
+  /* remove dead burst particles (reverse so indices stay valid) */
+  for (let i = dead.length - 1; i >= 0; i--) {
+    particles.splice(dead[i], 1);
+  }
+
+  /* ── word floaters ── */
+  if (t - lastWord > 240) {
+    spawnWord();
+    lastWord = t;
+  }
+
+  ctx.textAlign = 'center';
+  ctx.font = '9px "Share Tech Mono","Courier New",monospace';
+  for (let i = floaters.length - 1; i >= 0; i--) {
+    const f = floaters[i];
+    f.life++;
+    f.y += f.vy;
+    const prog = f.life / f.maxLife;
+    if      (prog < 0.12) f.alpha = prog / 0.12;
+    else if (prog > 0.65) f.alpha = 1 - (prog - 0.65) / 0.35;
+    else                   f.alpha = 1;
+    ctx.fillStyle = `rgba(200,164,106,${f.alpha * 0.7})`;
+    ctx.fillText(f.text, f.x, f.y);
+    if (f.life >= f.maxLife) floaters.splice(i, 1);
+  }
+}
+
+/* ── INPUT ── */
+window.addEventListener('mousemove', e => {
+  mouse.x = e.clientX; mouse.y = e.clientY; mouse.active = true;
+});
+window.addEventListener('mouseleave', () => { mouse.active = false; });
+
+window.addEventListener('touchmove', e => {
+  mouse.x = e.touches[0].clientX;
+  mouse.y = e.touches[0].clientY;
+  mouse.active = true;
+  e.preventDefault();
+}, { passive: false });
+window.addEventListener('touchend', () => { mouse.active = false; });
+
+window.addEventListener('click', e => {
+  for (let i = 0; i < 12; i++) particles.push(mkParticle(e.clientX, e.clientY, true));
+  spawnWord(); lastWord = t;
+});
+
+/* ── CAPTIONS ── */
+setTimeout(() => document.getElementById('caption').classList.add('on'),  2800);
+setTimeout(() => document.getElementById('word-hint').classList.add('on'), 1200);
+setTimeout(() => document.getElementById('word-hint').style.transition = 'opacity 6s', 8000);
+setTimeout(() => document.getElementById('word-hint').classList.remove('on'), 9000);
+
+draw();
+</script>
+</body>
+</html>
