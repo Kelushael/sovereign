@@ -521,6 +521,7 @@ Be direct. Do things. The machine is yours."""
         # ── bare / → interactive menu ──────────────────────────────────────
         if msg == "/":
             meta_options = [
+                ("models",       "list available models on VPS"),
                 ("run",          "swap active model on VPS"),
                 ("addcmd",       'add a command shortcut  /addcmd "name" "desc"'),
                 ("addtool",      'add a callable tool     /addtool "name" "desc" "cmd"'),
@@ -547,6 +548,33 @@ Be direct. Do things. The machine is yours."""
         # ── clear ──────────────────────────────────────────────────────────
         if msg.lower() == "clear":
             print("\033[2J\033[H", end=""); print_banner(); continue
+
+        # ── /models ────────────────────────────────────────────────────────
+        if msg.lower() in ("/models", "models"):
+            print(f"\n  {GOLD}fetching models from axis mundi...{RST}\n")
+            try:
+                r = requests.get(f"{MODEL_API}/models",
+                                 headers={"Authorization": f"Bearer {token}"},
+                                 timeout=8)
+                data = r.json().get("data", [])
+                if not data:
+                    print(f"  {GRAY}no models found{RST}\n")
+                else:
+                    col_id   = max(len(m.get("id","")) for m in data) + 2
+                    col_q    = 12
+                    print(f"  {GRAY}{'MODEL':<{col_id}} {'QUANT':<{col_q}} {'SIZE':>7}   STATUS{RST}")
+                    print(f"  {GRAY}{'─'*col_id} {'─'*col_q} {'─'*7}   {'─'*10}{RST}")
+                    for m in data:
+                        mid    = m.get("id", "?")
+                        quant  = m.get("quant") or "—"
+                        size   = f"{m['size_gb']}GB" if m.get("size_gb") else "—"
+                        status = f"{LIME}◉ active{RST}" if m.get("active") else f"{GRAY}· idle{RST}"
+                        active_mark = f"{GOLD} ← current{RST}" if mid == MODEL else ""
+                        print(f"  {CYAN}{mid:<{col_id}}{RST} {quant:<{col_q}} {size:>7}   {status}{active_mark}")
+                print()
+            except Exception as e:
+                print(f"  {RED}✗  {e}{RST}\n")
+            continue
 
         # ── /run <model> ───────────────────────────────────────────────────
         if msg.lower().startswith("/run"):
