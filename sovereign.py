@@ -16,7 +16,7 @@ import requests
 # ── SOVEREIGN DEFAULTS ────────────────────────────────────────────────────────
 SERVER    = "https://axismundi.fun"
 MODEL_API = os.environ.get("MODEL_API", f"{SERVER}/v1")
-MODEL     = "dolphin-mistral:latest"
+MODEL     = "glm4:latest"
 
 _cfg      = os.path.expanduser("~/.config/axis-mundi")
 CMD_FILE  = f"{_cfg}/commands.json"
@@ -640,14 +640,58 @@ Be direct. Do things. The machine is yours."""
 
 # ── MAIN ──────────────────────────────────────────────────────────────────────
 def main():
-    token = load_token()
+    raw_args = sys.argv[1:]
+
+    # ── identity flags ─────────────────────────────────────────────────────────
+    # sovereign --marcus   → Marcus identity, default token (~/.axis-token)
+    # sovereign --kyree    → Kyree identity,  token at ~/.axis-token-kyree
+    # sovereign --user X   → named identity,  token at ~/.axis-token-X
+    user       = None
+    token_file = None
+    args       = []
+    i = 0
+    while i < len(raw_args):
+        a = raw_args[i]
+        if a == "--marcus":
+            user = "marcus"; i += 1
+        elif a == "--kyree":
+            user = "kyree"
+            token_file = os.path.expanduser("~/.axis-token-kyree")
+            i += 1
+        elif a == "--user" and i + 1 < len(raw_args):
+            user = raw_args[i+1].lower()
+            token_file = os.path.expanduser(f"~/.axis-token-{user}")
+            i += 2
+        else:
+            args.append(a); i += 1
+
+    # ── load token ─────────────────────────────────────────────────────────────
+    token = ""
+    if token_file:
+        try:
+            t = open(token_file).read().strip()
+            if t: token = t
+        except Exception:
+            pass
     if not token:
-        print(f"\n{RED}  no token found{RST}")
-        print(f"  run:  {CYAN}bash ~/axismundi.fun{RST}  →  authenticate")
-        print(f"  or:   {CYAN}export AXIS_TOKEN=your-token{RST}\n")
+        token = load_token()   # falls back to ~/.axis-token / env / config.json
+
+    if not token:
+        print(f"\n{RED}  no token{RST}")
+        if user == "kyree":
+            print(f"  {GRAY}ask Marcus for your install command, or:{RST}")
+            print(f"  {CYAN}echo 'your-token' > ~/.axis-token-kyree{RST}\n")
+        else:
+            print(f"  {GRAY}write your token:   {CYAN}echo 'tok' > ~/.axis-token{RST}")
+            print(f"  {GRAY}or env:             {CYAN}export AXIS_TOKEN=tok{RST}\n")
+            print(f"  {GRAY}get sovereign:      {CYAN}https://markyninox.com{RST}\n")
         sys.exit(1)
 
-    args = sys.argv[1:]
+    # ── identity greeting ──────────────────────────────────────────────────────
+    if user and user != "marcus":
+        print(f"\n  {GOLD}◉ identity:{RST}  {user}")
+
+    # ── subcommands ────────────────────────────────────────────────────────────
     if args and args[0] == "list":
         print(f"\n  {GRAY}fetching models from VPS...{RST}")
         res = call_tool(token, "exec", {"command": "sovereign-run list"}, {})

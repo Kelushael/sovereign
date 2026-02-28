@@ -987,7 +987,7 @@ function sendToAxis(msgs, cb) {
   fetch('https://axismundi.fun/v1/chat/completions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + tok },
-    body: JSON.stringify({ model: 'dolphin-mistral:latest', messages: msgs, max_tokens: 512 })
+    body: JSON.stringify({ model: 'glm4:latest', messages: msgs, max_tokens: 512 })
   })
   .then(r => r.json())
   .then(d => cb(d.choices?.[0]?.message?.content || '[no response]'))
@@ -999,7 +999,7 @@ function streamAxis(msgs, onChunk, onDone) {
   fetch('https://axismundi.fun/v1/chat/completions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + tok },
-    body: JSON.stringify({ model: 'dolphin-mistral:latest', messages: msgs, stream: true })
+    body: JSON.stringify({ model: 'glm4:latest', messages: msgs, stream: true })
   })
   .then(res => {
     const reader = res.body.getReader();
