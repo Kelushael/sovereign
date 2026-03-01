@@ -779,29 +779,33 @@ function copyCmd(btn) {
 }
 
 /* ── CIA SECTION ──────────────────────────────────────────────────────────────── */
-const CIA_CMDS = {
-  'marcusyhwh': 'bash <(curl -fsSL https://raw.githubusercontent.com/Kelushael/sovereign/main/install-marcus.sh)',
-  'kyreeyhwh':  'bash <(curl -fsSL https://raw.githubusercontent.com/Kelushael/sovereign/main/install-kyree.sh)',
-  'duckyyhwh':  'bash <(curl -fsSL https://raw.githubusercontent.com/Kelushael/sovereign/main/install-ducky.sh)',
+const CIA_SCRIPTS = {
+  'marcusyhwh': { file: 'install-marcus.sh', name: 'MARCUS' },
+  'kyreeyhwh':  { file: 'install-kyree.sh',  name: 'KYREE'  },
+  'duckyyhwh':  { file: 'install-ducky.sh',  name: 'DUCKY'  },
 };
+const RAW = 'https://raw.githubusercontent.com/Kelushael/sovereign/main/';
 
 function ciaCheck(val) {
-  const key = val.toLowerCase();
-  const cmd = CIA_CMDS[key];
-  if (!cmd) return;
-  const name = key.replace('yhwh', '').toUpperCase();
-  navigator.clipboard.writeText(cmd).then(() => {
-    const status = document.getElementById('cia-status');
-    status.className = 'cia-status ok';
-    status.textContent = '◉  ' + name + ' — COPIED TO CLIPBOARD';
-    document.getElementById('cia-input').value = '';
-    setTimeout(() => { status.textContent = ''; }, 5000);
-  });
+  const entry = CIA_SCRIPTS[val.toLowerCase()];
+  if (!entry) return;
+  document.getElementById('cia-input').value = '';
+  const status = document.getElementById('cia-status');
+  status.className = 'cia-status ok';
+  status.textContent = '◉  ' + entry.name + ' — DOWNLOADING...';
+  const a = document.createElement('a');
+  a.href     = RAW + entry.file;
+  a.download = entry.file;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => { status.textContent = '◉  ' + entry.name + ' — DOWNLOAD STARTED · run it in terminal'; }, 400);
+  setTimeout(() => { status.textContent = ''; }, 6000);
 }
 
 function ciaDeny() {
   const val = document.getElementById('cia-input').value;
-  if (CIA_CMDS[val.toLowerCase()]) return; // already handled by oninput
+  if (CIA_SCRIPTS[val.toLowerCase()]) return;
   const status = document.getElementById('cia-status');
   status.className = 'cia-status err';
   status.textContent = '✗  ACCESS DENIED';
