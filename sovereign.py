@@ -16,7 +16,7 @@ import requests
 # ── SOVEREIGN DEFAULTS ────────────────────────────────────────────────────────
 SERVER    = "https://axismundi.fun"
 MODEL_API = os.environ.get("MODEL_API", f"{SERVER}/v1")
-MODEL     = "axis-model"
+MODEL     = "glm4:latest"
 
 _cfg      = os.path.expanduser("~/.config/axis-mundi")
 CMD_FILE  = f"{_cfg}/commands.json"
@@ -315,15 +315,38 @@ def call_tool(token, name, args, custom_tools):
         if t.get("has_input") and "input" in args:
             cmd = cmd.replace("{input}", str(args["input"]))
         return call_tool(token, "exec", {"command": cmd}, {})
-    headers = {"Content-Type": "application/json"}
-    if token: headers["Authorization"] = f"Bearer {token}"
-    try:
-        r = requests.post(f"{SERVER}/mcp/tools/call",
-                          json={"name": name, "arguments": args},
-                          headers=headers, timeout=120)
-        return r.json() if r.ok else {"error": f"HTTP {r.status_code}: {r.text[:200]}"}
-    except Exception as e:
-        return {"error": str(e)}
+
+    # ── local tool execution ───────────────────────────────────────────────────
+    if name == "exec":
+        import subprocess
+        cmd = args.get("command", "")
+        try:
+            r = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=60)
+            out = (r.stdout + r.stderr).strip()
+            return {"output": out or "(no output)", "code": r.returncode}
+        except subprocess.TimeoutExpired:
+            return {"error": "command timed out (60s)"}
+        except Exception as e:
+            return {"error": str(e)}
+
+    if name == "read_file":
+        path = os.path.expanduser(args.get("path", ""))
+        try:
+            with open(path) as f: return {"content": f.read()}
+        except Exception as e:
+            return {"error": str(e)}
+
+    if name == "write_file":
+        path = os.path.expanduser(args.get("path", ""))
+        content = args.get("content", "")
+        try:
+            os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+            with open(path, "w") as f: f.write(content)
+            return {"ok": True, "path": path}
+        except Exception as e:
+            return {"error": str(e)}
+
+    return {"error": f"unknown tool: {name}"}
 
 # ── CALL MODEL (VPS) — streaming ──────────────────────────────────────────────
 def call_model(messages, tools, token):
