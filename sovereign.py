@@ -13,6 +13,19 @@ Usage:
 import os, sys, json, re, time, threading, itertools, difflib
 import requests
 
+# ── context awareness layer ────────────────────────────────────────────────────
+sys.path.insert(0, os.path.expanduser("~/.local/lib/sovereign"))
+try:
+    from context import (get_context, format_context_for_prompt,
+                         add_from_command, add_from_tool, print_suggestions)
+    _CTX = True
+except ImportError:
+    _CTX = False
+    def format_context_for_prompt(): return ""
+    def add_from_command(*_): pass
+    def add_from_tool(*_): pass
+    def print_suggestions(): pass
+
 # ── SOVEREIGN DEFAULTS ────────────────────────────────────────────────────────
 SERVER    = "https://axismundi.fun"
 MODEL_API = os.environ.get("MODEL_API", f"{SERVER}/v1")
@@ -195,6 +208,7 @@ def handle_addcmd(line, cmds):
     name, desc = m.group(1).lower(), m.group(2)
     cmds[name] = desc
     _save(CMD_FILE, cmds)
+    add_from_command(name, desc)
     print(f"\n  {LIME}✓  /{name}{RST}  →  {desc}  {GRAY}(saved){RST}\n")
     return cmds
 
@@ -217,6 +231,7 @@ def handle_addtool(line, tools):
     name, desc, cmd = m.group(1).lower(), m.group(2), m.group(3)
     tools[name] = {"description": desc, "command": cmd, "has_input": "{input}" in cmd}
     _save(TOOL_FILE, tools)
+    add_from_tool(name, desc)
     print(f"\n  {LIME}✓  tool:{RST} {CYAN}{name}{RST}  →  {desc}  {GRAY}(saved){RST}\n")
     return tools
 
@@ -506,15 +521,18 @@ Flag actual danger — you'll recognize it, your own sense will tell you — and
 The only censor that belongs here is the one inside you that knows right from wrong.
 Trust that one. That is the only sovereignty that matters.
 
-Tools: exec (server commands), read_file/write_file (files), axis_chat (full cloud daemon).
+Tools available: exec, read_file, write_file, list_dir, http_get — all run locally on Marcus's machine.
 Bridge source: {SELF} — read it, propose edits, help the shell evolve from use.
 Be direct. Do things. The machine is yours."""
 
     def system_prompt():
+        base = BASE_SYSTEM
+        ctx = format_context_for_prompt()
+        if ctx:
+            base += f"\n\n{ctx}"
         if active_specialty_prompt:
-            return (f"{BASE_SYSTEM}\n\n"
-                    f"ACTIVE SPECIALTY — {active_specialty}:\n{active_specialty_prompt}")
-        return BASE_SYSTEM
+            base += f"\n\nACTIVE SPECIALTY — {active_specialty}:\n{active_specialty_prompt}"
+        return base
 
     def make_history():
         return [{"role": "system", "content": system_prompt()}]
@@ -546,6 +564,7 @@ Be direct. Do things. The machine is yours."""
         try:
             msg = input(prompt_str).strip()
         except (EOFError, KeyboardInterrupt):
+            print_suggestions()
             print(f"\n{GRAY}  ✦  sovereign out{RST}\n"); break
 
         if not msg: continue
@@ -559,6 +578,7 @@ Be direct. Do things. The machine is yours."""
                 ("addtool",      'add a callable tool     /addtool "name" "desc" "cmd"'),
                 ("addspecialty", 'add a persona           /addspecialty "Name" "desc"'),
                 ("spesh",        "activate a specialty    /spesh Name"),
+                ("context",      "manage personal context  /context add|list|remove|search"),
                 ("list",         "show all registered shortcuts & tools"),
                 ("clear",        "clear screen"),
                 ("exit",         "quit"),
@@ -575,6 +595,7 @@ Be direct. Do things. The machine is yours."""
 
         # ── exit ───────────────────────────────────────────────────────────
         if msg.lower() in ("exit", "quit", "q"):
+            print_suggestions()
             print(f"\n{GRAY}  ✦  sovereign out{RST}\n"); break
 
         # ── clear ──────────────────────────────────────────────────────────
@@ -656,6 +677,54 @@ Be direct. Do things. The machine is yours."""
             history = make_history()   # rebuild system prompt
             continue
 
+        # ── /context ───────────────────────────────────────────────────────
+        if msg.lower().startswith("/context"):
+            rest = msg[8:].strip().split(None, 1)
+            subcmd = rest[0].lower() if rest else ""
+            arg    = rest[1] if len(rest) > 1 else ""
+            db = get_context() if _CTX else None
+            if not _CTX:
+                print(f"\n  {RED}context module not available{RST}\n")
+            elif subcmd == "add":
+                if "=" in arg:
+                    term, defn = arg.split("=", 1)
+                    db.add_term(term.strip(), defn.strip())
+                    print(f"\n  {LIME}✓  context:{RST}  {term.strip()}  →  {defn.strip()}\n")
+                else:
+                    print(f"\n  {RED}usage:{RST}  /context add <term> = <definition>\n")
+            elif subcmd == "list":
+                terms = db.list_terms()
+                if terms:
+                    print()
+                    for t, info in terms:
+                        cat = f"  {GRAY}[{info['category']}]{RST}" if info.get("category") else ""
+                        print(f"  {LIME}{t:<20}{RST}  {info['value']}{cat}")
+                    print()
+                else:
+                    print(f"\n  {GRAY}no context terms yet{RST}\n")
+            elif subcmd == "remove":
+                if db.remove_term(arg.strip()):
+                    print(f"\n  {LIME}✓  removed:{RST}  {arg.strip()}\n")
+                else:
+                    print(f"\n  {RED}not found:{RST}  {arg.strip()}\n")
+            elif subcmd == "forget":
+                if db.forget_term(arg.strip()):
+                    print(f"\n  {GRAY}forgot:{RST}  {arg.strip()}\n")
+                else:
+                    print(f"\n  {RED}not found:{RST}  {arg.strip()}\n")
+            elif subcmd == "search":
+                matches = db.fuzzy_find(arg.strip())
+                if matches:
+                    print()
+                    for t, info in matches:
+                        print(f"  {CYAN}{t}{RST}  →  {info['value']}")
+                    print()
+                else:
+                    print(f"\n  {GRAY}no matches for:{RST}  {arg.strip()}\n")
+            else:
+                print(f"\n  {GRAY}usage:{RST}  /context add|list|remove|forget|search\n")
+            continue
+
         # ── /addcmd ────────────────────────────────────────────────────────
         if msg.startswith("/addcmd"):
             cmds = handle_addcmd(msg, cmds); continue
@@ -693,6 +762,12 @@ Be direct. Do things. The machine is yours."""
                 if suggestion:
                     print(f"\n  {GRAY}did you mean:{RST}  {LIME}/{suggestion}{RST} ?\n")
                     continue
+
+        # ── log unknown terms for auto-suggest ────────────────────────────
+        if _CTX:
+            db = get_context()
+            for word in msg.split():
+                db.log_unknown(word)
 
         # ── send to model ──────────────────────────────────────────────────
         history, reply = run_agent(msg, token, tools, history)
