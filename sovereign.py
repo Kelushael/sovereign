@@ -282,20 +282,6 @@ def make_tools(custom_tools):
             "parameters": {"type": "object",
                 "properties": {"url": {"type": "string"}}, "required": ["url"]}
         }},
-        {"type": "function", "function": {
-            "name": "axis_chat",
-            "description": (
-                "Delegate a complex task to the Axis Mundi cloud daemon — "
-                "full memory, filesystem, self-modification."
-            ),
-            "parameters": {"type": "object",
-                "properties": {"message": {"type": "string"}}, "required": ["message"]}
-        }},
-        {"type": "function", "function": {
-            "name": "axis_status",
-            "description": "Check Axis Mundi daemon status — uptime, model, memory.",
-            "parameters": {"type": "object", "properties": {}}
-        }},
     ]
     for name, t in custom_tools.items():
         core.append({"type": "function", "function": {
@@ -343,6 +329,28 @@ def call_tool(token, name, args, custom_tools):
             os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
             with open(path, "w") as f: f.write(content)
             return {"ok": True, "path": path}
+        except Exception as e:
+            return {"error": str(e)}
+
+    if name == "list_dir":
+        path = os.path.expanduser(args.get("path", "."))
+        try:
+            entries = os.listdir(path)
+            lines = []
+            for e in sorted(entries):
+                full = os.path.join(path, e)
+                tag = "/" if os.path.isdir(full) else ""
+                lines.append(e + tag)
+            return {"entries": lines, "count": len(lines), "path": path}
+        except Exception as e:
+            return {"error": str(e)}
+
+    if name == "http_get":
+        url = args.get("url", "")
+        try:
+            r = requests.get(url, timeout=15)
+            body = r.text[:10000]
+            return {"status": r.status_code, "body": body, "truncated": len(r.text) > 10000}
         except Exception as e:
             return {"error": str(e)}
 
