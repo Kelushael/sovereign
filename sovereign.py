@@ -558,7 +558,10 @@ Be direct. Do things. The machine is yours."""
 
     print_banner()
 
-    try: import readline
+    try:
+        import readline
+        readline.parse_and_bind('set enable-bracketed-paste off')
+        readline.parse_and_bind('set blink-matching-paren off')
     except: pass
 
     while True:
@@ -572,6 +575,22 @@ Be direct. Do things. The machine is yours."""
             print(f"\n{GRAY}  ✦  sovereign out{RST}\n"); break
 
         if not msg: continue
+
+        # ── multiline paste mode — type or paste """, then your block, then """ ─
+        if msg == '"""':
+            print(f"  {GRAY}paste mode — end with \"\"\" on its own line{RST}")
+            lines = []
+            while True:
+                try:
+                    line = input()
+                except (EOFError, KeyboardInterrupt):
+                    break
+                if line.strip() == '"""':
+                    break
+                lines.append(line)
+            msg = "\n".join(lines).strip()
+            if not msg:
+                continue
 
         # ── bare / → interactive menu ──────────────────────────────────────
         if msg == "/":
