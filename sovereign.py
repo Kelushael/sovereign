@@ -770,8 +770,12 @@ Be direct. Do things. The machine is yours."""
                 db.log_unknown(word)
 
         # ── rolling context window — keeps system prompt, trims oldest ────
-        if len(history) > 30:
-            history = history[:1] + history[-29:]
+        # guard by estimated token count (~4 chars/token), cap at 18K tokens
+        # so there's always room for the response inside a 24K ctx window
+        def _est_tokens(msgs):
+            return sum(len(m.get("content") or "") for m in msgs) // 4
+        while len(history) > 2 and _est_tokens(history) > 18000:
+            history = history[:1] + history[2:]  # drop oldest non-system pair
 
         # ── send to model ──────────────────────────────────────────────────
         history, reply = run_agent(msg, token, tools, history)
