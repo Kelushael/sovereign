@@ -91,7 +91,7 @@ def ask_model(exchanges, token):
                 "stream": False,
             },
             headers=headers,
-            timeout=120,
+            timeout=300,
         )
     except requests.exceptions.ConnectionError:
         print(f"\n{RED}  cannot reach {MODEL_API}{RST}\n")
