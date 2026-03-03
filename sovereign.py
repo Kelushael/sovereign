@@ -463,6 +463,10 @@ def run_agent(user_msg, token, custom_tools, history=None):
             with Spin(fn):
                 result = call_tool(token, fn, args, custom_tools)
             result_str = json.dumps(result) if isinstance(result, dict) else str(result)
+            # cap tool results at 4000 chars — prevents single large reads
+            # from blowing the context; model can re-read in chunks if needed
+            if len(result_str) > 4000:
+                result_str = result_str[:4000] + f"\n...[truncated, {len(result_str)} chars total]"
             print(f"  {LIME}↩  {result_str[:140]}{RST}")
             messages.append({"role": "tool", "tool_call_id": tc.get("id", fn),
                              "name": fn, "content": result_str})
