@@ -769,6 +769,10 @@ Be direct. Do things. The machine is yours."""
             for word in msg.split():
                 db.log_unknown(word)
 
+        # ── rolling context window — keeps system prompt, trims oldest ────
+        if len(history) > 30:
+            history = history[:1] + history[-29:]
+
         # ── send to model ──────────────────────────────────────────────────
         history, reply = run_agent(msg, token, tools, history)
         print(f"\n{fmt(reply)}\n" if reply else f"\n{RED}  no response{RST}\n")
