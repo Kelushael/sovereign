@@ -117,14 +117,19 @@ mkdir -p "$BIN"
 echo -e "  ${GRAY}downloading sovereign mesh scripts...${RST}"
 
 dl() {
-    local name="$1" dest="$2"
+    local name="$1" dest="$2" ok=0
     if command -v curl &>/dev/null; then
-        curl -fsSL "$REPO/${name}" -o "$dest"
+        curl -sSL "$REPO/${name}" -o "$dest" && ok=1
     else
-        wget -qO "$dest" "$REPO/${name}"
+        wget -qO "$dest" "$REPO/${name}" && ok=1
     fi
-    chmod +x "$dest"
-    echo -e "  ${LIME}✓${RST}  ${name%.py} → ${CYAN}${dest}${RST}"
+    if [ "$ok" = "1" ] && [ -s "$dest" ]; then
+        chmod +x "$dest"
+        echo -e "  ${LIME}✓${RST}  ${name%.py} → ${CYAN}${dest}${RST}"
+    else
+        rm -f "$dest"
+        echo -e "  ${GOLD}⚠  skipped: ${name} (try again in a moment)${RST}"
+    fi
 }
 
 dl sovereign.py "$DEST"
