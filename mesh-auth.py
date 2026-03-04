@@ -214,6 +214,7 @@ def heartbeat_loop(token, node_id, targets):
 
 # ── main ──────────────────────────────────────────────────────────────────────
 def main():
+    global SERVER
     p = argparse.ArgumentParser(description="Join this machine into the Axis Mundi mesh")
     p.add_argument("--requests", dest="targets", nargs="+", metavar="HOST[:PORT]",
                    help="Local LAN hosts/ports the mesh is allowed to reach through you")
@@ -221,7 +222,6 @@ def main():
     p.add_argument("--server", default=SERVER, help=f"Mesh server (default: {SERVER})")
     args = p.parse_args()
 
-    global SERVER
     SERVER = args.server
 
     print(f"\n  {PURP}{BOLD}mesh-auth{RST}  {GRAY}— axis mundi local bridge{RST}\n")
