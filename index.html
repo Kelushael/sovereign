@@ -493,7 +493,7 @@ html, body { width:100%; height:100%; background:var(--bg); color:var(--text); f
   <button class="section-back" onclick="closeInstall()">← BACK</button>
 
   <div class="section-title">INSTALL SOVEREIGN</div>
-  <div class="section-sub">zero config · all inference on axismundi.fun · no local compute</div>
+  <div class="section-sub">zero config · all inference on axismundi.fun · no local compute · your mesh · your rules</div>
 
   <div class="os-tabs">
     <button class="os-tab active" onclick="switchOS('linux')">Linux / macOS / WSL</button>
@@ -511,9 +511,10 @@ html, body { width:100%; height:100%; background:var(--bg); color:var(--text); f
         <button class="copy-btn" onclick="copyCmd(this)">COPY</button>
       </div>
       <div class="install-note">
-        Downloads <b>sovereign</b> and <b>cherub</b> to <b>~/.local/bin</b>, adds to PATH.<br>
+        Downloads <b>sovereign</b> · <b>cherub</b> · <b>herald</b> · <b>node</b> · <b>sov-exec</b> to <b>~/.local/bin</b>, adds to PATH.<br>
         Set your token: <b>AXIS_TOKEN=your_token</b> before running, or enter it when prompted.<br>
-        After install: <b>sovereign</b> to start · <b>cherub</b> to grow your shell from use.
+        First run: <b>herald</b> to configure · <b>sovereign</b> to start · <b>cherub</b> to grow your shell from use.<br>
+        Mesh: <b>node --role controller</b> · <b>node --role architect</b> · <b>node --role server</b>
       </div>
     </div>
   </div>
@@ -528,7 +529,8 @@ html, body { width:100%; height:100%; background:var(--bg); color:var(--text); f
       </div>
       <div class="install-note">
         Installs Python if needed (winget → choco → scoop → manual).<br>
-        Creates <b>sovereign.cmd</b> wrapper so <b>sovereign</b> works in cmd.exe too.<br>
+        Downloads <b>sovereign</b> · <b>cherub</b> · <b>herald</b> · <b>node</b> · <b>sov-exec</b>.<br>
+        Creates <b>sovereign.cmd</b> wrapper so commands work in cmd.exe too.<br>
         Set token: <b>$env:AXIS_TOKEN = "your_token"</b> before running.
       </div>
     </div>
@@ -544,7 +546,7 @@ html, body { width:100%; height:100%; background:var(--bg); color:var(--text); f
       </div>
       <div class="install-note">
         Same installer, works on Windows, macOS, and Linux via PowerShell Core.<br>
-        Replace <b>your_token</b> with your axis token or omit (prompts on first run).
+        Downloads all 5 scripts · Replace <b>your_token</b> with your axis token or omit (prompts on first run).
       </div>
     </div>
   </div>
@@ -559,8 +561,52 @@ html, body { width:100%; height:100%; background:var(--bg); color:var(--text); f
       </div>
       <div class="install-note">
         Same bash installer — runs on Termux out of the box.<br>
-        After install: <b>sovereign</b> gives you a full AI shell from your phone.
+        Downloads all 5 scripts · After install: <b>sovereign</b> gives you a full AI shell from your phone.
       </div>
+    </div>
+  </div>
+
+  <!-- ── MESH TOOLS GRID ── -->
+  <div style="width:100%;max-width:640px;margin-top:44px;">
+    <div style="font-size:9px;color:var(--goldD);letter-spacing:0.22em;text-transform:uppercase;margin-bottom:14px;text-align:center;">// WHAT YOU GET</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:14px 16px;">
+        <div style="font-size:11px;color:var(--gold);letter-spacing:0.12em;margin-bottom:6px;">sovereign</div>
+        <div style="font-size:10px;color:var(--gray);line-height:1.7;">Zero-config AI terminal. All inference on axismundi.fun. Your entry point.</div>
+        <div style="margin-top:8px;font-size:9px;color:var(--goldD);font-family:var(--mono);">sovereign</div>
+      </div>
+
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:14px 16px;">
+        <div style="font-size:11px;color:var(--gold);letter-spacing:0.12em;margin-bottom:6px;">herald</div>
+        <div style="font-size:10px;color:var(--gray);line-height:1.7;">Setup wizard. Configures your token, tests connectivity, installs everything. Run first.</div>
+        <div style="margin-top:8px;font-size:9px;color:var(--goldD);font-family:var(--mono);">herald</div>
+      </div>
+
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:14px 16px;">
+        <div style="font-size:11px;color:var(--gold);letter-spacing:0.12em;margin-bottom:6px;">node</div>
+        <div style="font-size:10px;color:var(--gray);line-height:1.7;">Universal mesh daemon. One script, any machine, any role. Runs your compute network.</div>
+        <div style="margin-top:8px;font-size:9px;color:var(--goldD);font-family:var(--mono);">node --role controller|architect|server|relay</div>
+      </div>
+
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:14px 16px;">
+        <div style="font-size:11px;color:var(--gold);letter-spacing:0.12em;margin-bottom:6px;">sov-exec</div>
+        <div style="font-size:10px;color:var(--gray);line-height:1.7;">Error-driven code agent. AI writes code, runs it, feeds errors back, loops until done. Zero cost.</div>
+        <div style="margin-top:8px;font-size:9px;color:var(--goldD);font-family:var(--mono);">sov-exec "build me a thing"</div>
+      </div>
+
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:14px 16px;">
+        <div style="font-size:11px;color:var(--gold);letter-spacing:0.12em;margin-bottom:6px;">cherub</div>
+        <div style="font-size:10px;color:var(--gray);line-height:1.7;">Pattern watcher. Reads your conversations, finds habits, proposes shortcuts. Shell grows from use.</div>
+        <div style="margin-top:8px;font-size:9px;color:var(--goldD);font-family:var(--mono);">cherub</div>
+      </div>
+
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:14px 16px;">
+        <div style="font-size:11px;color:var(--gold);letter-spacing:0.12em;margin-bottom:6px;">mesh-auth</div>
+        <div style="font-size:10px;color:var(--gray);line-height:1.7;">LAN bridge. Join any machine into the mesh. Proxy local services through the room bus.</div>
+        <div style="margin-top:8px;font-size:9px;color:var(--goldD);font-family:var(--mono);">curl axismundi.fun/mesh-auth.py | python3</div>
+      </div>
+
     </div>
   </div>
 
