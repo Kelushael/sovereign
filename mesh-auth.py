@@ -146,11 +146,14 @@ def room_loop(token, node_id, targets):
                     }, token)
 
                 elif mtype == "proxy":
-                    host = m.get("host", "")
-                    port = int(m.get("port", 80))
-                    path = m.get("path", "/")
-                    meth = m.get("method", "GET").upper()
-                    body = m.get("body")
+                    # params come in via text as JSON (room bus only persists text/type/for)
+                    try:    params = json.loads(m.get("text", "{}"))
+                    except: params = {}
+                    host = params.get("host") or m.get("host", "")
+                    port = int(params.get("port") or m.get("port", 80))
+                    path = params.get("path") or m.get("path", "/")
+                    meth = (params.get("method") or m.get("method", "GET")).upper()
+                    body = params.get("body") or m.get("body")
 
                     # check allowed targets
                     allowed = _is_allowed(host, port, targets)
