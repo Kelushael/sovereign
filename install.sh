@@ -11,6 +11,9 @@ REPO="https://raw.githubusercontent.com/Kelushael/sovereign/main"
 BIN="$HOME/.local/bin"
 DEST="$BIN/sovereign"
 CHERUB="$BIN/cherub"
+HERALD="$BIN/herald"
+NODE="$BIN/node"
+SOV_EXEC="$BIN/sov-exec"
 PINK='\033[38;2;255;105;180m'; LIME='\033[38;2;57;255;100m'
 CYAN='\033[38;2;0;220;255m';   GRAY='\033[38;2;85;85;105m'
 RED='\033[38;2;255;70;70m';    RST='\033[0m'; BOLD='\033[1m'
@@ -108,20 +111,27 @@ if [ -z "$DL" ]; then
     DL="curl -fsSL"
 fi
 
-# ── DOWNLOAD SOVEREIGN + CHERUB ───────────────────────────────────────────────
+# ── DOWNLOAD ALL SCRIPTS ──────────────────────────────────────────────────────
 mkdir -p "$BIN"
 
-echo -e "  ${GRAY}downloading sovereign...${RST}"
-if command -v curl &>/dev/null; then
-    curl -fsSL "$REPO/sovereign.py" -o "$DEST"
-    curl -fsSL "$REPO/cherub.py"    -o "$CHERUB"
-else
-    wget -qO "$DEST"   "$REPO/sovereign.py"
-    wget -qO "$CHERUB" "$REPO/cherub.py"
-fi
-chmod +x "$DEST" "$CHERUB"
-echo -e "  ${LIME}✓${RST}  sovereign → ${CYAN}${DEST}${RST}"
-echo -e "  ${LIME}✓${RST}  cherub    → ${CYAN}${CHERUB}${RST}"
+echo -e "  ${GRAY}downloading sovereign mesh scripts...${RST}"
+
+dl() {
+    local name="$1" dest="$2"
+    if command -v curl &>/dev/null; then
+        curl -fsSL "$REPO/${name}" -o "$dest"
+    else
+        wget -qO "$dest" "$REPO/${name}"
+    fi
+    chmod +x "$dest"
+    echo -e "  ${LIME}✓${RST}  ${name%.py} → ${CYAN}${dest}${RST}"
+}
+
+dl sovereign.py "$DEST"
+dl cherub.py    "$CHERUB"
+dl herald.py    "$HERALD"
+dl node.py      "$NODE"
+dl sov-exec.py  "$SOV_EXEC"
 
 # ── PATH ──────────────────────────────────────────────────────────────────────
 add_to_path() {
@@ -156,8 +166,11 @@ fi
 
 # ── DONE ──────────────────────────────────────────────────────────────────────
 echo -e "\n${PINK}${BOLD}  sovereign is ready.${RST}\n"
-echo -e "  ${LIME}sovereign${RST}  — open your stack"
-echo -e "  ${LIME}cherub${RST}     — pattern watcher\n"
+echo -e "  ${LIME}sovereign${RST}   — open your stack"
+echo -e "  ${LIME}cherub${RST}      — pattern watcher"
+echo -e "  ${LIME}herald${RST}      — setup wizard (run first on new machines)"
+echo -e "  ${LIME}node${RST}        — mesh daemon  (--role controller|architect|server|relay)"
+echo -e "  ${LIME}sov-exec${RST}    — error-driven code agent\n"
 
 # If sourced in current shell, reload PATH immediately
 [ -n "${BASH_VERSION:-}" ] && hash -r 2>/dev/null || true
