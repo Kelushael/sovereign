@@ -308,6 +308,91 @@ def make_tools(custom_tools):
         }})
     return core
 
+# ── PERMISSION GATE ───────────────────────────────────────────────────────────
+# Actions that require user confirmation before executing
+_GUARDED = {"write_file", "exec"}
+_GUARDED_EXEC_PATTERNS = [
+    "rm ", "rm\t", "rmdir", "mv ", "chmod", "chown",
+    "sudo", "curl.*|.*sh", "wget.*|.*sh", "> /", "dd ",
+    "systemctl", "reboot", "shutdown", "mkfs",
+]
+
+def _needs_confirm(name, args):
+    if name == "write_file":
+        return True
+    if name == "exec":
+        cmd = args.get("command", "").lower()
+        return any(re.search(p, cmd) for p in _GUARDED_EXEC_PATTERNS)
+    return False
+
+def confirm_action(name, args):
+    """
+    Show a permission prompt before a sensitive action.
+    Enter/y = allow   n = deny   Esc = suggest alternative
+    Returns: ("allow", None) | ("deny", None) | ("alternative", str)
+    """
+    try:
+        import tty, termios
+    except ImportError:
+        return "allow", None   # non-tty fallback
+
+    # ── build the summary line ─────────────────────────────────────────────
+    if name == "write_file":
+        path    = args.get("path", "?")
+        preview = (args.get("content") or "")[:60].replace('\n', '↵')
+        summary = f"write file  {CYAN}{path}{RST}  {GRAY}\"{preview}...\"{RST}"
+    elif name == "exec":
+        cmd     = args.get("command", "?")
+        summary = f"run command  {CYAN}{cmd}{RST}"
+    else:
+        summary = f"{name}  {GRAY}{json.dumps(args)[:80]}{RST}"
+
+    sys.stdout.write(
+        f"\n  {GOLD}◈  sovereign wants to:{RST}\n"
+        f"     {summary}\n\n"
+        f"  {GRAY}[Enter]{RST} allow   {GRAY}[N]{RST} deny   {GRAY}[Esc]{RST} suggest alternative\n"
+        f"  {PINK}›{RST} "
+    )
+    sys.stdout.flush()
+
+    fd  = sys.stdin.fileno()
+    old = termios.tcgetattr(fd)
+    try:
+        tty.setraw(fd)
+        ch = sys.stdin.read(1)
+        # handle escape sequence (arrow keys etc) — treat as Esc
+        if ch == '\x1b':
+            # drain any following bytes
+            sys.stdin.read(1) if sys.stdin in __import__('select').select([sys.stdin],[],[],0.05)[0] else None
+            ch = 'esc'
+    finally:
+        termios.tcsetattr(fd, termios.TCSADRAIN, old)
+
+    if ch in ('\r', '\n', 'y', 'Y'):
+        sys.stdout.write(f"\r  {LIME}✓  allowed{RST}          \n")
+        sys.stdout.flush()
+        return "allow", None
+
+    if ch in ('n', 'N'):
+        sys.stdout.write(f"\r  {RED}✗  denied{RST}           \n\n")
+        sys.stdout.flush()
+        return "deny", None
+
+    if ch == 'esc':
+        sys.stdout.write(f"\r  {GOLD}↳  what should it do instead?{RST}  ")
+        sys.stdout.flush()
+        try:
+            alt = input("").strip()
+        except (EOFError, KeyboardInterrupt):
+            alt = ""
+        sys.stdout.write("\n")
+        return "alternative", alt if alt else None
+
+    # any other key = allow
+    sys.stdout.write(f"\r  {LIME}✓  allowed{RST}          \n")
+    sys.stdout.flush()
+    return "allow", None
+
 # ── CALL TOOL ─────────────────────────────────────────────────────────────────
 def call_tool(token, name, args, custom_tools):
     if name in custom_tools:
@@ -460,6 +545,21 @@ def run_agent(user_msg, token, custom_tools, history=None):
                 try:    args = json.loads(args)
                 except: args = {}
             print(f"\n  {GOLD}⚙{RST}  {CYAN}{fn}{RST}  {GRAY}{json.dumps(args)[:80]}{RST}")
+
+            # ── permission gate ────────────────────────────────────────────
+            if _needs_confirm(fn, args):
+                decision, alternative = confirm_action(fn, args)
+                if decision == "deny":
+                    result = {"denied": True, "message": "user denied this action"}
+                    result_str = json.dumps(result)
+                    messages.append({"role": "tool", "tool_call_id": tc.get("id", fn),
+                                     "name": fn, "content": result_str})
+                    continue
+                elif decision == "alternative" and alternative:
+                    # feed the alternative back as a user message and break this round
+                    messages.append({"role": "user", "content": f"Don't do that. Instead: {alternative}"})
+                    break
+
             with Spin(fn):
                 result = call_tool(token, fn, args, custom_tools)
             result_str = json.dumps(result) if isinstance(result, dict) else str(result)
