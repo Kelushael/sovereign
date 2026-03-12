@@ -1046,7 +1046,7 @@ function sendToAxis(msgs, cb) {
   fetch('https://axismundi.fun/v1/chat/completions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + tok },
-    body: JSON.stringify({ model: 'axis-model', messages: msgs, max_tokens: 4096 }),
+    body: JSON.stringify({ model: 'axis-model', messages: msgs }),
     signal: ctrl.signal,
   })
   .then(r => r.json())
@@ -1062,7 +1062,7 @@ function streamAxis(msgs, onChunk, onDone) {
   fetch('https://axismundi.fun/v1/chat/completions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + tok },
-    body: JSON.stringify({ model: 'axis-model', messages: msgs, stream: true, max_tokens: 4096 }),
+    body: JSON.stringify({ model: 'axis-model', messages: msgs, stream: true }),
     signal: ctrl.signal,
   })
   .then(res => {
