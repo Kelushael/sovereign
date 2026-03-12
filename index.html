@@ -495,74 +495,29 @@ html, body { width:100%; height:100%; background:var(--bg); color:var(--text); f
   <div class="section-title">INSTALL SOVEREIGN</div>
   <div class="section-sub">zero config · all inference on axismundi.fun · no local compute · your mesh · your rules</div>
 
-  <div class="os-tabs">
-    <button class="os-tab active" onclick="switchOS('linux')">Linux / macOS / WSL</button>
-    <button class="os-tab" onclick="switchOS('windows')">Windows (PS)</button>
-    <button class="os-tab" onclick="switchOS('pscore')">PowerShell Core</button>
-    <button class="os-tab" onclick="switchOS('termux')">Termux (Android)</button>
-  </div>
+  <div style="width:100%;max-width:640px;display:flex;flex-direction:column;gap:14px;">
 
-  <!-- Linux / macOS / WSL -->
-  <div class="os-content on" id="os-linux">
-    <div class="install-box">
-      <div class="install-label">REQUIRES: bash, curl, python3</div>
-      <div class="install-cmd">
-        <span>curl -fsSL https://raw.githubusercontent.com/Kelushael/sovereign/main/install.sh | bash</span>
-        <button class="copy-btn" onclick="copyCmd(this)">COPY</button>
-      </div>
-      <div class="install-note">
-        Downloads <b>sovereign</b> · <b>cherub</b> · <b>herald</b> · <b>node</b> · <b>sov-exec</b> to <b>~/.local/bin</b>, adds to PATH.<br>
-        Set your token: <b>AXIS_TOKEN=your_token</b> before running, or enter it when prompted.<br>
-        First run: <b>herald</b> to configure · <b>sovereign</b> to start · <b>cherub</b> to grow your shell from use.<br>
-        Mesh: <b>node --role controller</b> · <b>node --role architect</b> · <b>node --role server</b>
-      </div>
+    <div style="font-size:9px;color:var(--goldD);letter-spacing:0.2em;text-transform:uppercase;margin-bottom:2px;">Linux · macOS · WSL</div>
+    <div class="install-cmd">
+      <span>curl -fsSL https://raw.githubusercontent.com/Kelushael/sovereign/main/install.sh | bash</span>
+      <button class="copy-btn" onclick="copyCmd(this)">COPY</button>
     </div>
-  </div>
 
-  <!-- Windows PowerShell -->
-  <div class="os-content" id="os-windows">
-    <div class="install-box">
-      <div class="install-label">REQUIRES: PowerShell 5.1+ (Windows 10/11)</div>
-      <div class="install-cmd">
-        <span>Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force; irm https://raw.githubusercontent.com/Kelushael/sovereign/main/install.ps1 | iex</span>
-        <button class="copy-btn" onclick="copyCmd(this)">COPY</button>
-      </div>
-      <div class="install-note">
-        Installs Python if needed (winget → choco → scoop → manual).<br>
-        Downloads <b>sovereign</b> · <b>cherub</b> · <b>herald</b> · <b>node</b> · <b>sov-exec</b>.<br>
-        Creates <b>sovereign.cmd</b> wrapper so commands work in cmd.exe too.<br>
-        Set token: <b>$env:AXIS_TOKEN = "your_token"</b> before running.
-      </div>
+    <div style="font-size:9px;color:var(--goldD);letter-spacing:0.2em;text-transform:uppercase;margin-top:6px;">Windows · PowerShell</div>
+    <div class="install-cmd">
+      <span>irm https://raw.githubusercontent.com/Kelushael/sovereign/main/install.ps1 | iex</span>
+      <button class="copy-btn" onclick="copyCmd(this)">COPY</button>
     </div>
-  </div>
 
-  <!-- PowerShell Core -->
-  <div class="os-content" id="os-pscore">
-    <div class="install-box">
-      <div class="install-label">REQUIRES: PowerShell 7+ (any OS)</div>
-      <div class="install-cmd">
-        <span>$env:AXIS_TOKEN="your_token"; irm https://raw.githubusercontent.com/Kelushael/sovereign/main/install.ps1 | iex</span>
-        <button class="copy-btn" onclick="copyCmd(this)">COPY</button>
-      </div>
-      <div class="install-note">
-        Same installer, works on Windows, macOS, and Linux via PowerShell Core.<br>
-        Downloads all 5 scripts · Replace <b>your_token</b> with your axis token or omit (prompts on first run).
-      </div>
+    <div style="font-size:9px;color:var(--goldD);letter-spacing:0.2em;text-transform:uppercase;margin-top:6px;">Android · Termux</div>
+    <div class="install-cmd">
+      <span>pkg install -y curl python && curl -fsSL https://raw.githubusercontent.com/Kelushael/sovereign/main/install.sh | bash</span>
+      <button class="copy-btn" onclick="copyCmd(this)">COPY</button>
     </div>
-  </div>
 
-  <!-- Termux -->
-  <div class="os-content" id="os-termux">
-    <div class="install-box">
-      <div class="install-label">REQUIRES: Termux (Android) — pkg updated</div>
-      <div class="install-cmd">
-        <span>pkg install -y curl python && curl -fsSL https://raw.githubusercontent.com/Kelushael/sovereign/main/install.sh | bash</span>
-        <button class="copy-btn" onclick="copyCmd(this)">COPY</button>
-      </div>
-      <div class="install-note">
-        Same bash installer — runs on Termux out of the box.<br>
-        Downloads all 5 scripts · After install: <b>sovereign</b> gives you a full AI shell from your phone.
-      </div>
+    <div class="install-note" style="margin-top:4px;">
+      Downloads <b>sovereign · cherub · herald · node · sov-exec</b> to <b>~/.local/bin</b> · all from GitHub.<br>
+      Run <b>herald</b> first to configure your token · then <b>sovereign</b> to start.
     </div>
   </div>
 
@@ -604,7 +559,7 @@ html, body { width:100%; height:100%; background:var(--bg); color:var(--text); f
       <div style="background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:14px 16px;">
         <div style="font-size:11px;color:var(--gold);letter-spacing:0.12em;margin-bottom:6px;">mesh-auth</div>
         <div style="font-size:10px;color:var(--gray);line-height:1.7;">LAN bridge. Join any machine into the mesh. Proxy local services through the room bus.</div>
-        <div style="margin-top:8px;font-size:9px;color:var(--goldD);font-family:var(--mono);">curl axismundi.fun/mesh-auth.py | python3</div>
+        <div style="margin-top:8px;font-size:9px;color:var(--goldD);font-family:var(--mono);">curl -fsSL https://raw.githubusercontent.com/Kelushael/sovereign/main/mesh-auth.py | python3</div>
       </div>
 
     </div>
@@ -807,14 +762,6 @@ function openApp() {
 function closeApp() {
   document.getElementById('app').classList.remove('on');
   document.getElementById('install-section').classList.add('on');
-}
-
-/* ── OS TAB SWITCHING ─────────────────────────────────────────────────────────── */
-function switchOS(id) {
-  document.querySelectorAll('.os-tab').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.os-content').forEach(c => c.classList.remove('on'));
-  event.target.classList.add('active');
-  document.getElementById('os-' + id).classList.add('on');
 }
 
 /* ── COPY COMMANDS ────────────────────────────────────────────────────────────── */
