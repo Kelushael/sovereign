@@ -487,6 +487,108 @@ def fmt(text):
             out.append(f"\033[38;2;200;220;255m{ln}{RST}")
     return '\n'.join(out)
 
+# ── CUSTOM LINE EDITOR ────────────────────────────────────────────────────────
+_ANSI = re.compile(r'\033\[[^m]*m')
+
+def read_line(prompt_str, history):
+    """
+    Drop-in input() replacement with two key upgrades:
+      · '/' on an empty buffer triggers the / menu INSTANTLY (no Enter needed)
+      · Full line editor: history (↑↓), cursor (←→), Ctrl-A/E/K/U/W
+    Falls back to plain input() on Windows or if tty is unavailable.
+    """
+    try:
+        import tty, termios
+    except ImportError:
+        return input(prompt_str)
+
+    sys.stdout.write(prompt_str)
+    sys.stdout.flush()
+
+    fd = sys.stdin.fileno()
+    try:
+        old = termios.tcgetattr(fd)
+    except termios.error:
+        return input('')
+
+    buf       = []
+    cursor    = 0
+    hist_pos  = len(history)
+    hist_stash = ""
+
+    def redraw():
+        back = len(buf) - cursor
+        sys.stdout.write(f'\r{prompt_str}{"".join(buf)}\033[K')
+        if back:
+            sys.stdout.write(f'\033[{back}D')
+        sys.stdout.flush()
+
+    result = ""
+    try:
+        tty.setraw(fd)
+        while True:
+            ch = sys.stdin.read(1)
+
+            # ── instant / trigger ─────────────────────────────────────────
+            if ch == '/' and not buf:
+                sys.stdout.write('\n')
+                sys.stdout.flush()
+                termios.tcsetattr(fd, termios.TCSADRAIN, old)
+                return '/'
+
+            # ── escape sequences ──────────────────────────────────────────
+            if ch == '\x1b':
+                n = sys.stdin.read(1)
+                if n == '[':
+                    a = sys.stdin.read(1)
+                    if   a == 'A':  # ↑ history
+                        if hist_pos > 0:
+                            if hist_pos == len(history): hist_stash = ''.join(buf)
+                            hist_pos -= 1
+                            buf = list(history[hist_pos]); cursor = len(buf); redraw()
+                    elif a == 'B':  # ↓ history
+                        if hist_pos < len(history):
+                            hist_pos += 1
+                            entry = history[hist_pos] if hist_pos < len(history) else hist_stash
+                            buf = list(entry); cursor = len(buf); redraw()
+                    elif a == 'C':  # →
+                        if cursor < len(buf): cursor += 1; redraw()
+                    elif a == 'D':  # ←
+                        if cursor > 0: cursor -= 1; redraw()
+                    elif a == '3':  sys.stdin.read(1); buf.pop(cursor) if cursor < len(buf) else None; redraw()
+                    elif a in ('H', 'F'):
+                        cursor = 0 if a == 'H' else len(buf); redraw()
+                # bare Esc → clear line
+                else:
+                    buf = []; cursor = 0; hist_pos = len(history); redraw()
+                continue
+
+            if ch in ('\r', '\n'):
+                sys.stdout.write('\n'); break
+            if ch == '\x03': sys.stdout.write('\n'); raise KeyboardInterrupt
+            if ch == '\x04': sys.stdout.write('\n'); raise (EOFError() if not buf else KeyboardInterrupt())
+            if ch in ('\x7f', '\x08'):           # backspace
+                if cursor > 0: buf.pop(cursor - 1); cursor -= 1; redraw()
+            elif ch == '\x01': cursor = 0; redraw()            # Ctrl-A
+            elif ch == '\x05': cursor = len(buf); redraw()     # Ctrl-E
+            elif ch == '\x0b': buf = buf[:cursor]; redraw()    # Ctrl-K
+            elif ch == '\x15': buf = buf[cursor:]; cursor = 0; redraw()  # Ctrl-U
+            elif ch == '\x17':                   # Ctrl-W  delete word back
+                i = cursor
+                while i > 0 and buf[i-1] == ' ': i -= 1
+                while i > 0 and buf[i-1] != ' ': i -= 1
+                buf = buf[:i] + buf[cursor:]; cursor = i; redraw()
+            elif ch.isprintable():
+                buf.insert(cursor, ch); cursor += 1; redraw()
+    finally:
+        try: termios.tcsetattr(fd, termios.TCSADRAIN, old)
+        except: pass
+
+    result = ''.join(buf).strip()
+    if result and (not history or history[-1] != result):
+        history.append(result)
+    return result
+
 # ── SHELL ─────────────────────────────────────────────────────────────────────
 def shell(token):
     global MODEL
@@ -558,18 +660,14 @@ Be direct. Do things. The machine is yours."""
 
     print_banner()
 
-    try:
-        import readline
-        readline.parse_and_bind('set enable-bracketed-paste off')
-        readline.parse_and_bind('set blink-matching-paren off')
-    except: pass
+    _history = []
 
     while True:
         spesh_label = f"{GOLD}[{active_specialty}]{RST} " if active_specialty else ""
         prompt_str  = f"{spesh_label}{PINK}{BOLD}sovereign{RST}{GRAY}@axis ›{RST} "
 
         try:
-            msg = input(prompt_str).strip()
+            msg = read_line(prompt_str, _history).strip()
         except (EOFError, KeyboardInterrupt):
             print_suggestions()
             print(f"\n{GRAY}  ✦  sovereign out{RST}\n"); break
@@ -856,6 +954,29 @@ def main():
     # ── identity greeting ──────────────────────────────────────────────────────
     if user and user != "marcus":
         print(f"\n  {GOLD}◉ identity:{RST}  {user}")
+
+    # ── help ───────────────────────────────────────────────────────────────────
+    if args and args[0] in ('-h', '--help'):
+        print(f"\n  {PINK}{BOLD}sovereign{RST}  ·  zero-config AI terminal  ·  all inference on your VPS\n")
+        print(f"  {GRAY}usage:{RST}")
+        print(f"    {CYAN}sovereign{RST}              interactive shell")
+        print(f"    {CYAN}sovereign{RST} \"query\"       one-shot")
+        print(f"    {CYAN}sovereign list{RST}          models available on VPS")
+        print(f"\n  {GRAY}flags:{RST}")
+        print(f"    {CYAN}--marcus{RST}               default identity (~/.axis-token)")
+        print(f"    {CYAN}--kyree{RST}                kyree identity  (~/.axis-token-kyree)")
+        print(f"    {CYAN}--user{RST} <name>          named identity  (~/.axis-token-<name>)")
+        print(f"\n  {GRAY}shell commands:{RST}")
+        print(f"    {LIME}/{RST}                      open command menu (arrow to select)")
+        print(f"    {LIME}/addcmd{RST} \"n\" \"desc\"    save a text shortcut")
+        print(f"    {LIME}/addtool{RST} \"n\" \"d\" \"cmd\" save a shell tool")
+        print(f"    {LIME}/addspecialty{RST} \"N\" \"d\" save a persona")
+        print(f"    {LIME}/spesh{RST} <name>          activate a persona")
+        print(f"    {LIME}/run{RST} <model>           swap active model on VPS")
+        print(f"    {LIME}/list{RST}                  show saved shortcuts & tools")
+        print(f"    {LIME}/context{RST} add|list|...  manage personal context")
+        print(f"    {LIME}exit{RST}                   quit\n")
+        return
 
     # ── subcommands ────────────────────────────────────────────────────────────
     if args and args[0] == "list":
